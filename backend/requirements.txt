@@ -3,4 +3,8 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 pydantic
+pydantic[email]
 python-multipart
+openai
+python-dotenv
+supabase  

@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# Node artifacts
+node_modules/
+frontend/node_modules/
+frontend/.next/
+
+# Env files (keep examples)
+.env
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+
+# Logs
+*.log

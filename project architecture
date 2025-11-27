@@ -1,5 +1,6 @@
 MCC Event Hub: Technical Architecture
 Status: Active Development Goal: Production-ready Event Management System + "Hired in 2026" Portfolio Stack: Next.js (Vercel) + FastAPI (Render/AWS) + Postgres (Supabase)
+
 1. The "Senior" Tech Stack (2026 Edition)
 This stack is chosen to maximize employability (Python + React) while ensuring stability for users.
 Layer
