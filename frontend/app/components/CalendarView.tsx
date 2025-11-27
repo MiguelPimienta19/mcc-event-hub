@@ -34,7 +34,7 @@ export default function CalendarView({ events = [] }: CalendarViewProps) {
   minTime.setHours(9, 0, 0);
 
   const maxTime = new Date();
-  maxTime.setHours(19, 0, 0); // 7 PM
+  maxTime.setHours(20, 0, 0); // 7 PM
 
   return (
     <div className="bg-surface rounded-xl border border-line p-4 shadow-soft">

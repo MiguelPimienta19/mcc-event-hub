@@ -65,3 +65,44 @@ body {
   color: var(--text);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+
+
+/* React Big Calendar - MCC Green Theme */
+.rbc-event {
+  background-color: var(--brand-600) !important;
+  border-color: var(--brand-700) !important;
+}
+
+.rbc-event:hover {
+  background-color: var(--brand-700) !important;
+}
+
+.rbc-selected {
+  background-color: var(--brand-700) !important;
+}
+
+.rbc-today {
+  background-color: var(--brand-50) !important;
+}
+
+.rbc-current-time-indicator {
+  background-color: var(--brand-600) !important;
+}
+
+.rbc-toolbar button:active,
+.rbc-toolbar button.rbc-active {
+  background-color: var(--brand-600) !important;
+  border-color: var(--brand-600) !important;
+  color: white !important;
+}
+
+.rbc-toolbar button:hover {
+  background-color: var(--brand-100) !important;
+  border-color: var(--brand-600) !important;
+  color: var(--brand-700) !important;
+}
+
+.rbc-off-range-bg {
+  background-color: #f9f9f9 !important;
+}

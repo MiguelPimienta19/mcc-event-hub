@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MCC Event Hub | University of Oregon",
-  description: "Discover and explore events from the Multicultural Center at the University of Oregon. Stay connected with BSU, NASU, MEChA, and more.",
+  title: "MCC Event Hub",
+  description: "Discover and explore events from the Multicultural Center at the University of Oregon",
 };
 
 export default function RootLayout({
