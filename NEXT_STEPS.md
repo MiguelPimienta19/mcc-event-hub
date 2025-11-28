@@ -80,9 +80,8 @@
 4. Logout functionality
 
 **How it works:**
-- Only admin emails in the Profile table can create/edit events
-- Regular users can view events and use agenda optimizer
-- Admins get access to event creation modal
+- Only admin emails in the Profile table can edit/delete events
+- Regular users can view events, create events, and use agenda optimizer
 
 ---
 
@@ -93,9 +92,8 @@
 **Features:**
 - Dashboard at `/admin` route
 - List all events with edit/delete buttons
-- Create event form (better than modal)
 - Manage admin users (add/remove from Profile table)
-- View analytics (event count, upcoming events, etc.)
+- View analytics (event count, upcoming events, etc.) not sure if really need the analytics part.
 
 **Requires:** Admin authentication (Option 2) to be done first
 
@@ -127,7 +125,6 @@
 - **Effort:** 2-4 hours
 
 ### **Nice-to-Haves**
-- Image uploads for events (using Supabase Storage)
 - Email notifications for new events
 - iCal export for calendar integration
 - Event search functionality

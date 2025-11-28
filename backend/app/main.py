@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database.db import engine, Base
-from .routers import events, agenda
+from .routers import events, agenda, auth
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,6 +37,7 @@ app.add_middleware(
 # Include routers
 app.include_router(events.router)  # Event CRUD endpoints
 app.include_router(agenda.router)  # AI Agenda Optimizer
+app.include_router(auth.router)  # Admin Authentication
 
 
 # Root endpoint

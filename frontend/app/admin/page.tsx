@@ -16,30 +16,38 @@ export default function AdminAccessPage() {
     setError("");
 
     try {
-      // TODO: Replace with actual Supabase authentication check
-      // For now, just validate email format
-      if (!email.includes("@")) {
-        setError("Please enter a valid email address");
-        setIsLoading(false);
-        return;
+      // Call backend login endpoint
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        // If 401, email not authorized
+        if (response.status === 401) {
+          setError("Email not authorized. Contact an administrator.");
+          return;
+        }
+        throw new Error("Login failed");
       }
 
-      // TODO: Call backend to verify admin email
-      // const response = await fetch("/api/auth/verify-admin", {
-      //   method: "POST",
-      //   body: JSON.stringify({ email }),
-      // });
+      // Get the token from response
+      const data = await response.json();
+      const { token } = data;
 
-      // Temporary: For development, allow any email
-      console.log("Admin email:", email);
+      // Store token in localStorage
+      localStorage.setItem("admin_token", token);
+      localStorage.setItem("admin_email", email);
 
-      // TODO: Redirect to actual admin dashboard
-      // router.push("/admin/dashboard");
-
-      alert("Admin authentication will be connected to Supabase backend!");
+      // Redirect to admin dashboard
+      router.push("/admin/dashboard");
 
     } catch (err) {
-      setError("Failed to verify admin access. Please try again.");
+      setError(err instanceof Error ? err.message : "Failed to login. Please try again.");
     } finally {
       setIsLoading(false);
     }

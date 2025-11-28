@@ -4,8 +4,9 @@ from typing import List
 from uuid import UUID
 
 from ..database.db import get_db
-from ..database.models import Event
+from ..database.models import Event, Profile
 from ..models.schemas import EventCreate, EventUpdate, EventResponse
+from .auth import get_current_admin
 
 router = APIRouter(
     prefix="/events",
@@ -76,12 +77,14 @@ def create_event(event_data: EventCreate, db: Session = Depends(get_db)):
 def update_event(
     event_id: UUID,
     event_data: EventUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: Profile = Depends(get_current_admin)
 ):
     """
     Update an existing event.
 
     Only provided fields will be updated.
+    **Requires admin authentication.**
     """
     event = db.query(Event).filter(Event.id == event_id).first()
 
@@ -103,11 +106,16 @@ def update_event(
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_event(event_id: UUID, db: Session = Depends(get_db)):
+def delete_event(
+    event_id: UUID,
+    db: Session = Depends(get_db),
+    admin: Profile = Depends(get_current_admin)
+):
     """
     Delete an event.
 
     This will also delete all associated agenda items (cascade).
+    **Requires admin authentication.**
     """
     event = db.query(Event).filter(Event.id == event_id).first()
 

@@ -84,6 +84,18 @@ class AgendaAIResponse(BaseModel):
 # Auth Schemas
 # ============================================
 
+class AdminLoginRequest(BaseModel):
+    """Schema for admin login request"""
+    email: EmailStr
+
+
+class AdminLoginResponse(BaseModel):
+    """Schema for admin login response"""
+    token: str
+    email: EmailStr
+    message: str
+
+
 class AdminVerifyRequest(BaseModel):
     """Schema for admin verification request"""
     email: EmailStr
@@ -94,3 +106,17 @@ class AdminVerifyResponse(BaseModel):
     success: bool
     message: str
     is_admin: bool = False
+
+
+class AddAdminRequest(BaseModel):
+    """Schema for adding a new admin"""
+    email: EmailStr
+
+
+class AdminProfileResponse(BaseModel):
+    """Schema for admin profile list response"""
+    email: EmailStr
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
