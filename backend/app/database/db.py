@@ -8,7 +8,7 @@ load_dotenv()
 
 # Get database URL from environment variable
 # Format: postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/mcc_db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL)

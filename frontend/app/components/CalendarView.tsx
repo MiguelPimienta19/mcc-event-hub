@@ -17,7 +17,7 @@ const localizer = dateFnsLocalizer({
 });
 
 interface Event {
-  id: number;
+  id: string | number;
   title: string;
   start: Date;
   end: Date;

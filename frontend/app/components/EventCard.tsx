@@ -1,7 +1,5 @@
-import Link from "next/link";
-
 interface Event {
-  id: number;
+  id: string | number;
   title: string;
   organization: string;
   start: Date;
@@ -10,9 +8,10 @@ interface Event {
 
 interface EventCardProps {
   event: Event;
+  onViewDetails: () => void;
 }
 
-export default function EventCard({ event }: EventCardProps) {
+export default function EventCard({ event, onViewDetails }: EventCardProps) {
   return (
     <article className="bg-surface rounded-lg border border-line p-5 hover:shadow-lift transition-shadow">
       <div className="mb-2">
@@ -38,17 +37,11 @@ export default function EventCard({ event }: EventCardProps) {
         
       </div>
       <div className="flex gap-2">
-        <Link
-          href={`/events/${event.id}`}
+        <button
+          onClick={onViewDetails}
           className="flex-1 text-center px-4 py-2 bg-brand-700 text-white rounded-md text-sm font-medium hover:bg-brand-800 transition-colors"
         >
           View Details
-        </Link>
-        <button
-          className="px-4 py-2 border border-line rounded-md text-sm font-medium text-text hover:bg-brand-50 transition-colors"
-          title="Add to Calendar"
-        >
-          📅
         </button>
       </div>
     </article>

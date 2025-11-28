@@ -14,7 +14,6 @@ class EventBase(BaseModel):
     organization: str
     start_time: datetime
     end_time: datetime
-    image_url: Optional[str] = None
 
 
 class EventCreate(EventBase):
@@ -29,7 +28,6 @@ class EventUpdate(BaseModel):
     organization: Optional[str] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    image_url: Optional[str] = None
 
 
 class EventResponse(EventBase):

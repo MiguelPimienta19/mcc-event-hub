@@ -28,8 +28,8 @@ export default function AgendaPage() {
     setIsLoading(true);
 
     try {
-      // Call your FastAPI backend (update URL when you set up backend)
-      const response = await fetch("http://localhost:8000/api/agenda", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/agenda`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

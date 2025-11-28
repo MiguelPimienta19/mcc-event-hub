@@ -1,22 +1,67 @@
+"use client";
+
+import { useState } from "react";
+
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onEventCreated?: () => void;
 }
 
-export default function EventModal({ isOpen, onClose }: EventModalProps) {
+export default function EventModal({ isOpen, onClose, onEventCreated }: EventModalProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Handle form submission - will connect to backend later
-    console.log("Event created!");
-    onClose();
+    setIsSubmitting(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+
+    const eventData = {
+      title: formData.get("title") as string,
+      organization: formData.get("organization") as string,
+      start_time: new Date(formData.get("start_time") as string).toISOString(),
+      end_time: new Date(formData.get("end_time") as string).toISOString(),
+      description: formData.get("description") as string || null,
+    };
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create event");
+      }
+
+      onEventCreated?.();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create event");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-surface rounded-2xl shadow-lift max-w-4xl w-full p-8">
         <h2 className="text-2xl font-semibold text-text mb-6">Create New Event</h2>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -27,6 +72,7 @@ export default function EventModal({ isOpen, onClose }: EventModalProps) {
               </label>
               <input
                 type="text"
+                name="title"
                 placeholder="Enter event title"
                 className="w-full px-4 py-3 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
@@ -40,6 +86,7 @@ export default function EventModal({ isOpen, onClose }: EventModalProps) {
               </label>
               <input
                 type="text"
+                name="organization"
                 placeholder="e.g.  BSU, NASU, MECHA"
                 className="w-full px-4 py-3 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
@@ -53,6 +100,7 @@ export default function EventModal({ isOpen, onClose }: EventModalProps) {
               </label>
               <input
                 type="datetime-local"
+                name="start_time"
                 className="w-full px-4 py-3 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
               />
@@ -65,10 +113,24 @@ export default function EventModal({ isOpen, onClose }: EventModalProps) {
               </label>
               <input
                 type="datetime-local"
+                name="end_time"
                 className="w-full px-4 py-3 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
               />
             </div>
+          </div>
+
+          {/* Optional Description */}
+          <div>
+            <label className="block text-sm font-medium text-text mb-2">
+              Description (Optional)
+            </label>
+            <textarea
+              name="description"
+              placeholder="Enter event description"
+              rows={3}
+              className="w-full px-4 py-3 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            />
           </div>
 
           {/* Action Buttons */}
@@ -76,15 +138,17 @@ export default function EventModal({ isOpen, onClose }: EventModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 bg-surface border border-line text-text rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              disabled={isSubmitting}
+              className="px-6 py-3 bg-surface border border-line text-text rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors shadow-soft"
+              disabled={isSubmitting}
+              className="px-6 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors shadow-soft disabled:opacity-50"
             >
-              Create Event
+              {isSubmitting ? "Creating..." : "Create Event"}
             </button>
           </div>
         </form>

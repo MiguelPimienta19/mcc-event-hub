@@ -34,7 +34,6 @@ app.add_middleware(
 )
 
 
-
 # Include routers
 app.include_router(events.router)  # Event CRUD endpoints
 app.include_router(agenda.router)  # AI Agenda Optimizer
