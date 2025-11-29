@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/constants";
 import dynamic from "next/dynamic";
 import EventModal from "./components/EventModal";
 import EventCard from "./components/EventCard";
@@ -32,7 +33,7 @@ export default function Home() {
     try {
       setIsLoading(true);
       setError(null);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = API_URL;
       const response = await fetch(`${apiUrl}/events`);
 
       if (!response.ok) {
@@ -64,8 +65,19 @@ export default function Home() {
     fetchEvents();
   }, []);
 
+  // Normalize organization name (remove ALL whitespace, capitalize consistently)
+  const normalizeOrgName = (name: string): string => {
+    return name.replace(/\s+/g, '').toUpperCase();
+  };
+
   // Filter events by organization
-  const filteredEvents = selectedOrg === "All" ? events : events.filter((event) => event.organization === selectedOrg);
+  const filteredEvents = selectedOrg === "All"
+    ? events
+    : events.filter((event) => normalizeOrgName(event.organization) === normalizeOrgName(selectedOrg));
+
+  // Get unique organizations from events (normalized)
+  const uniqueOrgNames = new Set(events.map(event => normalizeOrgName(event.organization)));
+  const organizations = ["All", ...Array.from(uniqueOrgNames).sort()];
 
   return (
     <div className="min-h-screen bg-bg">
@@ -123,11 +135,32 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {/* Calendar */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-text mb-4">
+            {/* Organization Filter */}
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-text">
                 Event Calendar
               </h2>
+              <div className="flex items-center gap-3">
+                <label htmlFor="org-filter" className="text-sm font-medium text-muted">
+                  Filter by Organization:
+                </label>
+                <select
+                  id="org-filter"
+                  value={selectedOrg}
+                  onChange={(e) => setSelectedOrg(e.target.value)}
+                  className="px-4 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface text-text"
+                >
+                  {organizations.map((org) => (
+                    <option key={org} value={org}>
+                      {org}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Calendar */}
+            <div className="mb-8">
               <CalendarView events={filteredEvents} />
             </div>
 
@@ -138,7 +171,12 @@ export default function Home() {
               </h2>
               {filteredEvents.length === 0 ? (
                 <div className="text-center py-12 bg-surface rounded-lg border border-line">
-                  <p className="text-muted text-lg">No events found. Create your first event!</p>
+                  <p className="text-muted text-lg">
+                    {selectedOrg === "All"
+                      ? "No events found. Create your first event!"
+                      : `No events found for ${selectedOrg}.`
+                    }
+                  </p>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "@/lib/constants";
+import { getAuthHeaders } from "@/lib/auth";
 import Link from "next/link";
 import EditEventModal from "@/app/components/EditEventModal";
 import DeleteConfirmationModal from "@/app/components/DeleteConfirmationModal";
@@ -21,16 +23,9 @@ interface Admin {
 }
 
 // Constants
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const apiUrl = API_URL
 
-// Helper functions
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("admin_token");
-  return {
-    "Authorization": `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-};
+
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -72,7 +67,7 @@ export default function AdminDashboard() {
   const fetchEvents = async () => {
     try {
       setEventsLoading(true);
-      const response = await fetch(`${API_URL}/events`);
+      const response = await fetch(`${apiUrl}/events`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch events");
@@ -90,7 +85,7 @@ export default function AdminDashboard() {
   const fetchAdmins = async () => {
     try {
       setAdminsLoading(true);
-      const response = await fetch(`${API_URL}/auth/admins`, {
+      const response = await fetch(`${apiUrl}/auth/admins`, {
         headers: getAuthHeaders(),
       });
 
@@ -113,7 +108,7 @@ export default function AdminDashboard() {
 
     try {
       setAddingAdmin(true);
-      const response = await fetch(`${API_URL}/auth/admins`, {
+      const response = await fetch(`${apiUrl}/auth/admins`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ email: newAdminEmail }),
@@ -144,7 +139,7 @@ export default function AdminDashboard() {
 
     try {
       setIsDeletingAdmin(true);
-      const response = await fetch(`${API_URL}/auth/admins/${encodeURIComponent(deletingAdminEmail)}`, {
+      const response = await fetch(`${apiUrl}/auth/admins/${encodeURIComponent(deletingAdminEmail)}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
@@ -178,7 +173,7 @@ export default function AdminDashboard() {
 
     try {
       setIsDeleting(true);
-      const response = await fetch(`${API_URL}/events/${deletingEvent.id}`, {
+      const response = await fetch(`${apiUrl}/events/${deletingEvent.id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });

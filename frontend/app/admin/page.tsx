@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "@/lib/constants";
 
 export default function AdminAccessPage() {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export default function AdminAccessPage() {
 
     try {
       // Call backend login endpoint
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = API_URL;
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: "POST",
         headers: {

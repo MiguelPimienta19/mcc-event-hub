@@ -12,13 +12,14 @@ Key Concepts:
 
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import secrets
 
 from ..database.db import get_db
 from ..database.models import Profile
 from ..models.schemas import AdminLoginRequest, AdminLoginResponse, AdminProfileResponse, AddAdminRequest
+from ..crud import get_profile_by_email
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -26,6 +27,32 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # In production, you'd use Redis or a database table
 # Format: {token: {"email": "user@example.com", "expires": datetime}}
 active_sessions = {}
+
+def extract_token(authorization: Optional[str]) -> str:
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No authorization token provided",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    return authorization.replace("Bearer ", "")
+
+def validate_session(token: str):
+    if token not in active_sessions:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired session",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    session = active_sessions[token]
+    if datetime.now(timezone.utc) > session["expires"]:
+        del active_sessions[token]
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired. Please login again.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    return session
 
 
 def generate_session_token() -> str:
@@ -56,7 +83,7 @@ def login(
     """
 
     # Step 1: Query the database for this email
-    profile = db.query(Profile).filter(Profile.email == request.email).first()
+    profile = get_profile_by_email(db, request.email)
 
     # Step 2: If email not found, return error
     if not profile:
@@ -69,7 +96,7 @@ def login(
     token = generate_session_token()
 
     # Step 4: Store session (expires in 24 hours)
-    expiration = datetime.utcnow() + timedelta(hours=24)
+    expiration = datetime.now(timezone.utc) + timedelta(hours=24)
     active_sessions[token] = {
         "email": request.email,
         "expires": expiration
@@ -93,11 +120,7 @@ def logout(authorization: Optional[str] = Header(None)):
 
     The token comes from the Authorization header: "Bearer <token>"
     """
-    if not authorization:
-        return {"message": "No session to logout"}
-
-    # Extract token from "Bearer <token>" format
-    token = authorization.replace("Bearer ", "")
+    token = extract_token(authorization)
 
     if token in active_sessions:
         del active_sessions[token]
@@ -117,31 +140,8 @@ def verify_session(authorization: Optional[str] = Header(None)):
     The token comes from the Authorization header: "Bearer <token>"
     """
 
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No authorization token provided"
-        )
-
-    # Extract token from "Bearer <token>" format
-    token = authorization.replace("Bearer ", "")
-
-    # Check if token exists
-    if token not in active_sessions:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired session"
-        )
-
-    session = active_sessions[token]
-
-    # Check if token expired
-    if datetime.utcnow() > session["expires"]:
-        del active_sessions[token]
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session expired. Please login again."
-        )
+    token = extract_token(authorization)
+    session = validate_session(token)
 
     # Token is valid!
     return {
@@ -172,37 +172,11 @@ def get_current_admin(
     The token comes from the Authorization header: "Bearer <token>"
     """
 
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated. Please login.",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    # Extract token from "Bearer <token>" format
-    token = authorization.replace("Bearer ", "")
-
-    # Check if token exists
-    if token not in active_sessions:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired session",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    session = active_sessions[token]
-
-    # Check if expired
-    if datetime.utcnow() > session["expires"]:
-        del active_sessions[token]
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session expired. Please login again.",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+    token = extract_token(authorization)
+    session = validate_session(token)
 
     # Get the profile from database
-    profile = db.query(Profile).filter(Profile.email == session["email"]).first()
+    profile = get_profile_by_email(db, session["email"])
 
     if not profile:
         raise HTTPException(
@@ -243,7 +217,7 @@ def add_admin(
     **Requires admin authentication.**
     """
     # Check if admin already exists
-    existing = db.query(Profile).filter(Profile.email == request.email).first()
+    existing = get_profile_by_email(db, request.email)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -280,7 +254,7 @@ def remove_admin(
         )
 
     # Find the admin
-    admin_to_remove = db.query(Profile).filter(Profile.email == email).first()
+    admin_to_remove = get_profile_by_email(db, email)
 
     if not admin_to_remove:
         raise HTTPException(

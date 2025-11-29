@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { API_URL } from "@/lib/constants";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ export default function EventModal({ isOpen, onClose, onEventCreated }: EventMod
     };
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = API_URL;
       const response = await fetch(`${apiUrl}/events`, {
         method: "POST",
         headers: {

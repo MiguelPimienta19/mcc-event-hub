@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { API_URL } from "@/lib/constants";
 
 export default function AgendaPage() {
   const [messages, setMessages] = useState([
@@ -28,7 +30,7 @@ export default function AgendaPage() {
     setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = API_URL;
       const response = await fetch(`${apiUrl}/api/agenda`, {
         method: "POST",
         headers: {
@@ -103,7 +105,13 @@ export default function AgendaPage() {
                     : "bg-surface border border-line text-text"
                 }`}
               >
-                <p className="leading-relaxed">{message.content}</p>
+                {message.role === "user" ? (
+                  <p className="leading-relaxed">{message.content}</p>
+                ) : (
+                  <div className="prose prose-sm max-w-none leading-relaxed prose-headings:font-semibold prose-headings:text-text prose-p:text-text prose-strong:text-text prose-ul:text-text prose-ol:text-text prose-li:text-text">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                )}
               </div>
             </div>
           ))}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
@@ -7,6 +7,8 @@ from ..database.db import get_db
 from ..database.models import Event, Profile
 from ..models.schemas import EventCreate, EventUpdate, EventResponse
 from .auth import get_current_admin
+from ..crud import get_event_or_404
+
 
 router = APIRouter(
     prefix="/events",
@@ -45,13 +47,7 @@ def get_event(event_id: UUID, db: Session = Depends(get_db)):
     """
     Get a single event by ID.
     """
-    event = db.query(Event).filter(Event.id == event_id).first()
-
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with id {event_id} not found"
-        )
+    event = get_event_or_404(db, event_id)
 
     return event
 
@@ -86,13 +82,7 @@ def update_event(
     Only provided fields will be updated.
     **Requires admin authentication.**
     """
-    event = db.query(Event).filter(Event.id == event_id).first()
-
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with id {event_id} not found"
-        )
+    event = get_event_or_404(db, event_id)
 
     # Update only provided fields
     update_data = event_data.model_dump(exclude_unset=True)
@@ -117,13 +107,7 @@ def delete_event(
     This will also delete all associated agenda items (cascade).
     **Requires admin authentication.**
     """
-    event = db.query(Event).filter(Event.id == event_id).first()
-
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with id {event_id} not found"
-        )
+    event = get_event_or_404(db, event_id)
 
     db.delete(event)
     db.commit()

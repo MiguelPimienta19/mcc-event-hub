@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/constants";
+import { getAuthHeaders } from "@/lib/auth";
 
 interface Event {
   id: string;
@@ -83,13 +85,11 @@ export default function EditEventModal({
         description: description || null,
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = API_URL;
+      const headers = getAuthHeaders();
       const response = await fetch(`${apiUrl}/events/${event.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify(eventData),
       });
 
