@@ -22,7 +22,8 @@ app = FastAPI(
 # This allows your Next.js frontend to communicate with this backend
 origins = [
     "http://localhost:3000",  # Local development
-    "https://mcc-web.vercel.app",  # Production frontend (update with your actual Vercel URL)
+    "https://mcc-event-hub.vercel.app",  # Production frontend
+    "https://*.vercel.app",  # All Vercel preview deployments
 ]
 
 app.add_middleware(
