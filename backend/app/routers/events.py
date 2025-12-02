@@ -21,6 +21,7 @@ def get_events(
     skip: int = 0,
     limit: int = 100,
     organization: str = None,
+    type: str = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -29,12 +30,17 @@ def get_events(
     - **skip**: Number of records to skip (for pagination)
     - **limit**: Maximum number of records to return
     - **organization**: Filter by organization name (optional)
+    - **type**: Filter by event type: "event" or "office_hours" (optional)
     """
     query = db.query(Event)
 
     # Filter by organization if provided
     if organization:
         query = query.filter(Event.organization == organization)
+
+    # Filter by type if provided
+    if type:
+        query = query.filter(Event.type == type)
 
     # Order by start time (ascending)
     events = query.order_by(Event.start_time.asc()).offset(skip).limit(limit).all()

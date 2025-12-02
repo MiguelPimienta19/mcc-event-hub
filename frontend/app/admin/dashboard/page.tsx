@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { API_URL } from "@/lib/constants";
 import { getAuthHeaders } from "@/lib/auth";
 import Link from "next/link";
+import EventModal from "@/app/components/EventModal";
 import EditEventModal from "@/app/components/EditEventModal";
 import DeleteConfirmationModal from "@/app/components/DeleteConfirmationModal";
 
@@ -33,6 +34,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -44,6 +46,14 @@ export default function AdminDashboard() {
   const [addingAdmin, setAddingAdmin] = useState(false);
   const [deletingAdminEmail, setDeletingAdminEmail] = useState<string | null>(null);
   const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
+
+  // Pagination state
+  const [eventsPage, setEventsPage] = useState(1);
+  const [adminsPage, setAdminsPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
+  // View type filter (events vs office hours)
+  const [viewType, setViewType] = useState<"event" | "office_hours">("event");
 
   useEffect(() => {
     // Check if user is logged in
@@ -64,10 +74,17 @@ export default function AdminDashboard() {
     fetchAdmins();
   }, [router]);
 
+  // Refetch events when viewType changes
+  useEffect(() => {
+    if (!isLoading && email) {
+      fetchEvents();
+    }
+  }, [viewType]);
+
   const fetchEvents = async () => {
     try {
       setEventsLoading(true);
-      const response = await fetch(`${apiUrl}/events`);
+      const response = await fetch(`${apiUrl}/events?type=${viewType}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch events");
@@ -206,6 +223,26 @@ export default function AdminDashboard() {
     router.push("/admin");
   };
 
+  // Sort and paginate events (most recent first)
+  const sortedEvents = [...events].sort((a, b) =>
+    new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+  );
+  const totalEventsPages = Math.ceil(sortedEvents.length / ITEMS_PER_PAGE);
+  const paginatedEvents = sortedEvents.slice(
+    (eventsPage - 1) * ITEMS_PER_PAGE,
+    eventsPage * ITEMS_PER_PAGE
+  );
+
+  // Sort and paginate admins (most recent first)
+  const sortedAdmins = [...admins].sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+  const totalAdminsPages = Math.ceil(sortedAdmins.length / ITEMS_PER_PAGE);
+  const paginatedAdmins = sortedAdmins.slice(
+    (adminsPage - 1) * ITEMS_PER_PAGE,
+    adminsPage * ITEMS_PER_PAGE
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -276,55 +313,115 @@ export default function AdminDashboard() {
           ) : admins.length === 0 ? (
             <p className="text-muted text-center py-8">No admins found.</p>
           ) : (
-            <div className="space-y-2">
-              {admins.map((admin) => (
-                <div
-                  key={admin.email}
-                  className="flex items-center justify-between p-4 bg-bg rounded-lg border border-line"
-                >
-                  <div>
-                    <p className="font-medium text-text">{admin.email}</p>
-                    <p className="text-sm text-muted">
-                      Added {new Date(admin.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveAdmin(admin.email)}
-                    disabled={admin.email === email}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={admin.email === email ? "You cannot remove yourself" : "Remove admin"}
+            <>
+              <div className="space-y-2">
+                {paginatedAdmins.map((admin) => (
+                  <div
+                    key={admin.email}
+                    className="flex items-center justify-between p-4 bg-bg rounded-lg border border-line"
                   >
-                    Remove
+                    <div>
+                      <p className="font-medium text-text">{admin.email}</p>
+                      <p className="text-sm text-muted">
+                        Added {new Date(admin.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveAdmin(admin.email)}
+                      disabled={admin.email === email}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={admin.email === email ? "You cannot remove yourself" : "Remove admin"}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls for Admins */}
+              {totalAdminsPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-6">
+                  <button
+                    onClick={() => setAdminsPage(p => Math.max(1, p - 1))}
+                    disabled={adminsPage === 1}
+                    className="px-4 py-2 bg-surface border border-line rounded-lg font-medium transition-colors hover:bg-brand-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-muted">
+                    Page {adminsPage} of {totalAdminsPages}
+                  </span>
+                  <button
+                    onClick={() => setAdminsPage(p => Math.min(totalAdminsPages, p + 1))}
+                    disabled={adminsPage === totalAdminsPages}
+                    className="px-4 py-2 bg-surface border border-line rounded-lg font-medium transition-colors hover:bg-brand-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
                   </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
 
         {/* Event Management Section */}
         <div className="bg-surface rounded-xl shadow-soft p-8 border border-line">
-          <h2 className="text-2xl font-bold text-text mb-6">
-            Manage Events
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-text">
+              Manage {viewType === "event" ? "Events" : "Office Hours"}
+            </h2>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium transition-colors"
+            >
+              + Create New {viewType === "event" ? "Event" : "Office Hours"}
+            </button>
+          </div>
+
+          {/* Tab Toggle: Events | Office Hours */}
+          <div className="mb-6 flex justify-center">
+            <div className="inline-flex bg-bg rounded-lg border border-line p-1">
+              <button
+                onClick={() => setViewType("event")}
+                className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                  viewType === "event"
+                    ? "bg-brand-600 text-white"
+                    : "text-muted hover:text-text"
+                }`}
+              >
+                Events
+              </button>
+              <button
+                onClick={() => setViewType("office_hours")}
+                className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                  viewType === "office_hours"
+                    ? "bg-brand-600 text-white"
+                    : "text-muted hover:text-text"
+                }`}
+              >
+                Office Hours
+              </button>
+            </div>
+          </div>
 
           {eventsLoading ? (
-            <p className="text-muted text-center py-8">Loading events...</p>
+            <p className="text-muted text-center py-8">Loading {viewType === "event" ? "events" : "office hours"}...</p>
           ) : events.length === 0 ? (
-            <p className="text-muted text-center py-8">No events found. Users can create events from the main calendar page.</p>
+            <p className="text-muted text-center py-8">No {viewType === "event" ? "events" : "office hours"} found. Click "Create New {viewType === "event" ? "Event" : "Office Hours"}" to add your first one.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-line">
-                  <tr>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-text">Event</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-text">Organization</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-text">Date & Time</th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-text">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {events.map((event) => (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b border-line">
+                    <tr>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-text">Event</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-text">Organization</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-text">Date & Time</th>
+                      <th className="text-right py-3 px-4 text-sm font-semibold text-text">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedEvents.map((event) => (
                     <tr key={event.id} className="border-b border-line hover:bg-bg transition-colors">
                       <td className="py-4 px-4">
                         <div>
@@ -364,13 +461,47 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Controls for Events */}
+              {totalEventsPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-6">
+                  <button
+                    onClick={() => setEventsPage(p => Math.max(1, p - 1))}
+                    disabled={eventsPage === 1}
+                    className="px-4 py-2 bg-surface border border-line rounded-lg font-medium transition-colors hover:bg-brand-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-muted">
+                    Page {eventsPage} of {totalEventsPages}
+                  </span>
+                  <button
+                    onClick={() => setEventsPage(p => Math.min(totalEventsPages, p + 1))}
+                    disabled={eventsPage === totalEventsPages}
+                    className="px-4 py-2 bg-surface border border-line rounded-lg font-medium transition-colors hover:bg-brand-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
+
+      {/* Create Event Modal */}
+      <EventModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onEventCreated={() => {
+          fetchEvents();
+          setShowCreateModal(false);
+        }}
+      />
 
       {/* Edit Event Modal */}
       <EditEventModal

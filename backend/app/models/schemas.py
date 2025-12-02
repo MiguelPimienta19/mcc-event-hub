@@ -12,6 +12,7 @@ class EventBase(BaseModel):
     title: str
     description: Optional[str] = None
     organization: str
+    type: str = "event"  # "event" or "office_hours"
     start_time: datetime
     end_time: datetime
 
@@ -26,6 +27,7 @@ class EventUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     organization: Optional[str] = None
+    type: Optional[str] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 

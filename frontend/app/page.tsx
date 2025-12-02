@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { API_URL } from "@/lib/constants";
 import dynamic from "next/dynamic";
-import EventModal from "./components/EventModal";
 import EventCard from "./components/EventCard";
 import EventDetailModal from "./components/EventDetailModal";
 
@@ -22,11 +21,12 @@ interface Event {
 
 export default function Home() {
   const [selectedOrg, setSelectedOrg] = useState("All");
-  const [showEventModal, setShowEventModal] = useState(false);
+  const [showContactMessage, setShowContactMessage] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewType, setViewType] = useState<"event" | "office_hours">("event");
 
   // Fetch events from backend
   const fetchEvents = async () => {
@@ -34,7 +34,7 @@ export default function Home() {
       setIsLoading(true);
       setError(null);
       const apiUrl = API_URL;
-      const response = await fetch(`${apiUrl}/events`);
+      const response = await fetch(`${apiUrl}/events?type=${viewType}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch events");
@@ -60,10 +60,10 @@ export default function Home() {
     }
   };
 
-  // Load events on mount
+  // Load events on mount and when viewType changes
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [viewType]);
 
   // Normalize organization name (remove ALL whitespace, capitalize consistently)
   const normalizeOrgName = (name: string): string => {
@@ -105,13 +105,14 @@ export default function Home() {
           <p className="text-text text-xl font-medium mb-6 max-w-3xl mx-auto">
             Your central hub for managing meetings, events, and collaborative spaces. Stay organized!
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-4 mb-6">
             <button
-              onClick={() => setShowEventModal(true)}
+              onClick={() => setShowContactMessage(!showContactMessage)}
               className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-full font-medium hover:bg-brand-700 transition-colors shadow-soft"
             >
               📅 Add to Calendar
             </button>
+            
             <Link
               href="/agenda"
               className="flex items-center gap-2 px-6 py-3 bg-surface text-text border border-line rounded-full font-medium hover:bg-brand-50 transition-colors"
@@ -119,6 +120,20 @@ export default function Home() {
               📋 Make Meeting Agenda
             </Link>
           </div>
+          
+          {showContactMessage && (
+            <div className="bg-surface border border-line rounded-lg p-6 max-w-2xl mx-auto">
+              <p className="text-text text-base">
+                Want to add to the calendar? Please reach out to{" "}
+                <a
+                  href="mailto:mcc@uoregon.edu"
+                  className="text-brand-600 hover:text-brand-700 font-medium underline"
+                >
+                  mcc@uoregon.edu
+                </a>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Error Message */}
@@ -128,17 +143,43 @@ export default function Home() {
           </div>
         )}
 
+        {/* Tab Toggle: Events | Office Hours */}
+        <div className="mb-6 flex justify-center">
+          <div className="inline-flex bg-surface rounded-lg border border-line p-1">
+            <button
+              onClick={() => setViewType("event")}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                viewType === "event"
+                  ? "bg-brand-600 text-white"
+                  : "text-muted hover:text-text"
+              }`}
+            >
+              Events
+            </button>
+            <button
+              onClick={() => setViewType("office_hours")}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                viewType === "office_hours"
+                  ? "bg-brand-600 text-white"
+                  : "text-muted hover:text-text"
+              }`}
+            >
+              Office Hours
+            </button>
+          </div>
+        </div>
+
         {/* Loading State */}
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-muted text-lg">Loading events...</p>
+            <p className="text-muted text-lg">Loading {viewType === "event" ? "events" : "office hours"}...</p>
           </div>
         ) : (
           <>
             {/* Organization Filter */}
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-semibold text-text">
-                Event Calendar
+                {viewType === "event" ? "Event Calendar" : "Office Hours"}
               </h2>
               <div className="flex items-center gap-3">
                 <label htmlFor="org-filter" className="text-sm font-medium text-muted">
@@ -167,14 +208,14 @@ export default function Home() {
             {/* Upcoming Events List */}
             <div className="mt-12">
               <h2 className="text-2xl font-semibold text-text mb-4">
-                Upcoming Events
+                {viewType === "event" ? "Upcoming Events" : "Upcoming Office Hours"}
               </h2>
               {filteredEvents.length === 0 ? (
                 <div className="text-center py-12 bg-surface rounded-lg border border-line">
                   <p className="text-muted text-lg">
                     {selectedOrg === "All"
-                      ? "No events found. Create your first event!"
-                      : `No events found for ${selectedOrg}.`
+                      ? `No ${viewType === "event" ? "events" : "office hours"} found.`
+                      : `No ${viewType === "event" ? "events" : "office hours"} found for ${selectedOrg}.`
                     }
                   </p>
                 </div>
@@ -193,16 +234,6 @@ export default function Home() {
           </>
         )}
       </main>
-
-      {/* Create Event Modal */}
-      <EventModal
-        isOpen={showEventModal}
-        onClose={() => setShowEventModal(false)}
-        onEventCreated={() => {
-          fetchEvents();
-          setShowEventModal(false);
-        }}
-      />
 
       {/* Event Detail Modal */}
       <EventDetailModal
